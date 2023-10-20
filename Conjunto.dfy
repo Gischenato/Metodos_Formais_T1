@@ -40,8 +40,9 @@ class Conjunto {
         ensures Invariant()
         ensures b == true ==> Conteudo == {}
         ensures b == true ==> conj.Length == 0
-        // ensures b == false ==> Conteudo != {}
-        // ensures b == false ==> exists i: nat :: i in Conteudo
+        ensures b == false ==> Conteudo != {}
+        ensures b == false ==> exists i: nat :: i in Conteudo
+        ensures b == true ==> conj.Length >= 0
     {
         b := currSize == 0;
     }
@@ -108,6 +109,8 @@ class Conjunto {
         ensures x >= 0
         ensures x !in Conteudo
 
+        ensures currSize == 0 ==> Conteudo == {}
+        ensures currSize  > 0 ==> Conteudo != {}
 
         ensures b == true ==> (x in old(Conteudo))
         ensures b == false ==> (x !in old(Conteudo))
@@ -118,6 +121,7 @@ class Conjunto {
         ensures b == true ==> currSize == old(currSize) - 1
         ensures b == false ==> currSize == old(currSize)
     {
+        var tamanho := this.size();
         var inside := this.contains(x);
         if !inside {
             return false;
@@ -125,15 +129,23 @@ class Conjunto {
         var position := this.findIdx(x);
         assert conj[position] == x;
         conj := swap(conj, position, currSize-1);
+        assert currSize > 0 ==> Conteudo != {};
         assert conj[currSize-1] == x;
         conj := pop(conj);
-        Conteudo := Conteudo - {x};
         currSize := currSize - 1;
+        Conteudo := Conteudo - {x};
+        // assert currSize > 0 ==> Conteudo != {};
 
         assert currSize == conj.Length;
         assert x !in Conteudo;
         assert forall i: nat :: 0 <= i < currSize ==> conj[i] != x;
         assert old(conj[position]) == x;
+
+        assert forall i: nat :: 0 <= i < currSize ==> conj[i] in Conteudo;
+        assert forall i: nat :: i in Conteudo ==> exists j: nat :: 0 <= j < currSize && conj[j] == i;
+        assert currSize == 0 ==> Conteudo == {};
+        assert currSize > 0 ==> forall i: nat :: i in Conteudo ==> exists j: nat :: 0 <= j < currSize && conj[j] == i;
+        assert currSize > 0 ==> Conteudo != {};
 
         return true;
     }
