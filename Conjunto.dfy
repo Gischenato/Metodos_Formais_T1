@@ -16,7 +16,6 @@ class Conjunto {
         conj.Length == currSize &&
 
         (currSize == 0 ==> Conteudo == {}) &&
-        (currSize  > 0 ==> Conteudo != {}) &&
 
         (forall i: nat :: i in Conteudo ==> exists j: nat :: 0 <= j < currSize && conj[j] == i) &&
         (forall i: nat :: 0 <= i < currSize ==> conj[i] in Conteudo) &&
@@ -27,6 +26,8 @@ class Conjunto {
     constructor ()
         ensures Invariant() && fresh(Repr)
         ensures Conteudo == {}
+        ensures currSize == 0
+        ensures conj.Length == 0
     {
         currSize := 0;
         conj := new nat[0];
@@ -38,11 +39,9 @@ class Conjunto {
         requires Invariant()
 
         ensures Invariant()
-        ensures b == true ==> Conteudo == {}
-        ensures b == true ==> conj.Length == 0
-        ensures b == false ==> Conteudo != {}
-        ensures b == false ==> exists i: nat :: i in Conteudo
-        ensures b == true ==> conj.Length >= 0
+        ensures currSize == 0 ==> Conteudo == {}
+        ensures currSize == 0 ==> b == true
+        ensures currSize > 0 ==> b == false
     {
         b := currSize == 0;
     }
@@ -104,13 +103,10 @@ class Conjunto {
 
     method remove(x:nat) returns (b:bool)
         requires Invariant()
-        modifies conj, Repr
-        ensures Invariant()
+        modifies Repr
+        ensures Invariant() && fresh(Repr - old(Repr))
         ensures x >= 0
         ensures x !in Conteudo
-
-        ensures currSize == 0 ==> Conteudo == {}
-        ensures currSize  > 0 ==> Conteudo != {}
 
         ensures b == true ==> (x in old(Conteudo))
         ensures b == false ==> (x !in old(Conteudo))
@@ -145,16 +141,54 @@ class Conjunto {
         assert forall i: nat :: i in Conteudo ==> exists j: nat :: 0 <= j < currSize && conj[j] == i;
         assert currSize == 0 ==> Conteudo == {};
         assert currSize > 0 ==> forall i: nat :: i in Conteudo ==> exists j: nat :: 0 <= j < currSize && conj[j] == i;
-        assert currSize > 0 ==> Conteudo != {};
 
         return true;
     }
 
+    method addArray(arr: array<nat>)
+        requires Invariant()
+        requires arr.Length > 0
+        modifies Repr
+        ensures Invariant() && fresh(Repr - old(Repr))
+        // ensures forall i: nat :: 0 <= i < arr.Length ==> exists j: nat :: 0 <= j < currSize && conj[j] == arr[i]
+
+    {
+        assume conj != arr;
+
+        var size := arr.Length;
+        var newArr := arr[..];
+        // var teste := newArr[0];
+
+        var value := arr[0];
+        assert newArr[0] == arr[0];
+        var i := 0;
+        while(i < size)
+            invariant 0 <= i <= size
+            invariant Invariant() && fresh(Repr - old(Repr))
+            // invariant Conteudo == old(Conteudo) + {arr[i]}
+            modifies Repr
+            // invariant i < size ==> newArr[i] == arr[i]
+            // invariant forall j: nat :: 0 <= j < i ==> newArr[j] in Conteudo
+        {
+            var value := arr[i];
+            var test := value;
+            // var test := value;
+            // assert newArr[0] == arr[0];
+            assert value == arr[i];
+            var insert := this.add(value);
+            assert test == value;
+            assert value == arr[i];
+            assert arr[i] in Conteudo;
+            i := i + 1;
+        }
+        // assert forall j: nat :: 0 <= j < arr.Length ==> exists k: nat :: 0 <= k < currSize && conj[k] == arr[j];
+    }
+
     method add(x:nat) returns (b:bool)
         requires Invariant()
-        modifies conj, Repr
+        modifies Repr
 
-        ensures Invariant()
+        ensures Invariant() && fresh(Repr - old(Repr))
         ensures x >= 0
         
         ensures b == true ==> Conteudo == old(Conteudo) + {x}
@@ -238,12 +272,68 @@ method swap(arr:array<nat>, i:nat, j:nat) returns (newArr:array<nat>)
 
 
 method Main(){
-    var s: set<nat> := {};
-    assert s == {};
-    assert !(s != {});
+    var conjunto := new Conjunto();
+    var size := conjunto.size();
+    assert size == 0;
 
-    s := s + {1};
-    // assert s == {};
-    assert s != {};
+    var empty := conjunto.isEmpty();
+    assert empty == true;
 
+    var inserir := conjunto.add(67);
+    assert inserir == true;
+
+    empty := conjunto.isEmpty();
+    assert empty == false;
+    
+    var remover := conjunto.remove(67);
+    assert remover == true;
+
+    empty := conjunto.isEmpty();
+    assert empty == true;
+
+    remover := conjunto.remove(67);
+    assert remover == false;
+
+    inserir := conjunto.add(1);
+    assert inserir == true;
+    inserir := conjunto.add(4);
+    assert inserir == true;
+    inserir := conjunto.add(4);
+    assert inserir == false;
+    inserir := conjunto.add(6);
+    assert inserir == true;
+    inserir := conjunto.add(7);
+    assert inserir == true;
+    inserir := conjunto.add(9);
+    assert inserir == true;
+    inserir := conjunto.add(10);
+    assert inserir == true;
+    inserir := conjunto.add(15);
+    assert inserir == true;
+    inserir := conjunto.add(10);
+    assert inserir == false;
+
+    size := conjunto.size();
+    assert size == 7;
+
+    assert conjunto.Conteudo == {1, 4, 6, 7, 9, 10, 15};
+    
+    remover := conjunto.remove(6);
+    assert remover == true;
+    remover := conjunto.remove(15);
+    assert remover == true;
+    remover := conjunto.remove(10);
+    assert remover == true;
+
+    size := conjunto.size();
+    assert size == 4;
+
+    assert conjunto.Conteudo == {1, 4, 7, 9};
+
+    var arr := new nat[5](x => x*5); // 0, 5, 10, 15, 20
+    conjunto.addArray(arr);
+
+    // assert conjunto.Conteudo == {1, 4, 7, 9, 0, 5, 10, 15, 20};
+    size := conjunto.size();
+    assert size == 9;
 }
