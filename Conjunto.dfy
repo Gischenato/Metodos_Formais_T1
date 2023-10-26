@@ -145,43 +145,52 @@ class Conjunto {
         return true;
     }
 
-    method addArray(arr: array<nat>)
+    method addArray(arr: array<nat>) returns (qnt: nat, newValues: set<nat>)
         requires Invariant()
-        requires arr.Length > 0
         modifies Repr
-        ensures Invariant() && fresh(Repr - old(Repr))
-        // ensures forall i: nat :: 0 <= i < arr.Length ==> exists j: nat :: 0 <= j < currSize && conj[j] == arr[i]
 
+        ensures Invariant()
+        ensures currSize == old(currSize) + qnt
+        ensures Conteudo == old(Conteudo) + newValues
+        ensures forall i: nat :: 0 <= i < arr.Length ==> arr[i] in Conteudo
+        ensures forall i: nat :: i in Conteudo ==> exists j: nat :: 0 <= j < currSize && conj[j] == i
+        ensures forall i: nat :: !(exists k : nat :: 0 <= k < arr.Length && arr[k] == i) ==> i !in newValues
     {
-        assume conj != arr;
-
-        var size := arr.Length;
-        var newArr := arr[..];
-        // var teste := newArr[0];
-
-        var value := arr[0];
-        assert newArr[0] == arr[0];
+        // assert 1 == 0;
+        var toAdd: set<nat> := {};
         var i := 0;
-        while(i < size)
-            invariant 0 <= i <= size
-            invariant Invariant() && fresh(Repr - old(Repr))
-            // invariant Conteudo == old(Conteudo) + {arr[i]}
-            modifies Repr
-            // invariant i < size ==> newArr[i] == arr[i]
-            // invariant forall j: nat :: 0 <= j < i ==> newArr[j] in Conteudo
+        var total := 0;
+        
+        while(i < arr.Length)
+            invariant 0 <= i <= arr.Length
+            invariant Invariant()
+            invariant forall j: nat :: 0 <= j < i ==> arr[j] in Conteudo
+            invariant forall j: nat :: 0 <= j < i ==> exists k: nat :: 0 <= k < currSize && conj[k] == arr[j]
+            invariant forall j: nat :: j in Conteudo ==> exists k: nat :: 0 <= k < currSize && conj[k] == j
+            invariant currSize == old(currSize) + total
+            invariant Conteudo == old(Conteudo) + toAdd
+            invariant forall j: nat :: 0 <= j < i ==> arr[j] in toAdd
+            invariant forall j: nat :: j in toAdd ==> exists k : nat :: 0 <= k < i && arr[k] == j
+            
         {
             var value := arr[i];
-            var test := value;
-            // var test := value;
-            // assert newArr[0] == arr[0];
-            assert value == arr[i];
-            var insert := this.add(value);
-            assert test == value;
-            assert value == arr[i];
-            assert arr[i] in Conteudo;
+            toAdd := toAdd + {arr[i]};
+            var inside := this.contains(value);
+            if inside {
+                i := i + 1;
+                continue;
+            }
+            total := total + 1;
+            conj := append(conj, value);
+            Conteudo := Conteudo + {value};
+            currSize := currSize + 1;
             i := i + 1;
         }
-        // assert forall j: nat :: 0 <= j < arr.Length ==> exists k: nat :: 0 <= k < currSize && conj[k] == arr[j];
+
+
+        assert currSize == old(currSize) + total;
+        return total, toAdd;
+
     }
 
     method add(x:nat) returns (b:bool)
@@ -270,6 +279,52 @@ method swap(arr:array<nat>, i:nat, j:nat) returns (newArr:array<nat>)
     newArr[j] := arr[i];
 }
 
+method Main2(){
+    var conjunto := new Conjunto();
+    
+    var size := conjunto.size();
+    assert size == 0;
+
+    var empty := conjunto.isEmpty();
+    assert empty == true;
+
+    var inserir := conjunto.add(2);
+    assert inserir == true;
+
+    empty := conjunto.isEmpty();
+    assert empty == false;
+
+    assert conjunto.Conteudo == {2};
+
+    
+    var arr := new nat[5](x => x*5); // 0, 5, 10, 15, 20
+    assert 2 in conjunto.Conteudo;
+    assert 6 !in conjunto.Conteudo;
+
+    var qnt, s := conjunto.addArray(arr);
+    
+    assert arr[1] == 5;
+    assert arr[1] in conjunto.Conteudo;
+    assert arr[0] == 0;
+    assert arr[0] in conjunto.Conteudo;
+    assert 0 in conjunto.Conteudo;
+    assert 5 in conjunto.Conteudo;
+    assert 6 !in conjunto.Conteudo;
+    assert 2 in conjunto.Conteudo;
+
+    assert forall i: nat :: 0 <= i < arr.Length ==> arr[i] in conjunto.Conteudo;
+
+    // var remove := conjunto.remove(5);
+    // Por algum motivo, o assert abaixo nao funciona
+    // nao entendi o porque, ja que depois ele funciona
+    // assert 10 in conjunto.Conteudo;
+    assert arr[2] == 10;
+    assert arr[2] in conjunto.Conteudo;
+    assert 10 in conjunto.Conteudo;
+    
+
+}
+
 
 method Main(){
     var conjunto := new Conjunto();
@@ -329,11 +384,4 @@ method Main(){
     assert size == 4;
 
     assert conjunto.Conteudo == {1, 4, 7, 9};
-
-    var arr := new nat[5](x => x*5); // 0, 5, 10, 15, 20
-    conjunto.addArray(arr);
-
-    // assert conjunto.Conteudo == {1, 4, 7, 9, 0, 5, 10, 15, 20};
-    size := conjunto.size();
-    assert size == 9;
 }
