@@ -1,3 +1,8 @@
+// Alunos:
+// Giovanni Schenato
+// Gabriel Tabajara
+// Camila Ilges
+
 class Conjunto {
     var currSize: nat
     var conj: array<nat>
