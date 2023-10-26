@@ -279,52 +279,6 @@ method swap(arr:array<nat>, i:nat, j:nat) returns (newArr:array<nat>)
     newArr[j] := arr[i];
 }
 
-method Main2(){
-    var conjunto := new Conjunto();
-    
-    var size := conjunto.size();
-    assert size == 0;
-
-    var empty := conjunto.isEmpty();
-    assert empty == true;
-
-    var inserir := conjunto.add(2);
-    assert inserir == true;
-
-    empty := conjunto.isEmpty();
-    assert empty == false;
-
-    assert conjunto.Conteudo == {2};
-
-    
-    var arr := new nat[5](x => x*5); // 0, 5, 10, 15, 20
-    assert 2 in conjunto.Conteudo;
-    assert 6 !in conjunto.Conteudo;
-
-    var qnt, s := conjunto.addArray(arr);
-    
-    assert arr[1] == 5;
-    assert arr[1] in conjunto.Conteudo;
-    assert arr[0] == 0;
-    assert arr[0] in conjunto.Conteudo;
-    assert 0 in conjunto.Conteudo;
-    assert 5 in conjunto.Conteudo;
-    assert 6 !in conjunto.Conteudo;
-    assert 2 in conjunto.Conteudo;
-
-    assert forall i: nat :: 0 <= i < arr.Length ==> arr[i] in conjunto.Conteudo;
-
-    // var remove := conjunto.remove(5);
-    // Por algum motivo, o assert abaixo nao funciona
-    // nao entendi o porque, ja que depois ele funciona
-    // assert 10 in conjunto.Conteudo;
-    assert arr[2] == 10;
-    assert arr[2] in conjunto.Conteudo;
-    assert 10 in conjunto.Conteudo;
-    
-
-}
-
 
 method Main(){
     var conjunto := new Conjunto();
@@ -384,4 +338,50 @@ method Main(){
     assert size == 4;
 
     assert conjunto.Conteudo == {1, 4, 7, 9};
+}
+
+method Main2(){
+    var conjunto := new Conjunto();
+    
+    var size := conjunto.size();
+    assert size == 0;
+
+    var empty := conjunto.isEmpty();
+    assert empty == true;
+
+    var inserir := conjunto.add(2);
+    assert inserir == true;
+
+    empty := conjunto.isEmpty();
+    assert empty == false;
+
+    assert conjunto.Conteudo == {2};
+
+    
+    var arr := new nat[5](x => x*5); // 0, 5, 10, 15, 20
+    assert 2 in conjunto.Conteudo;
+    assert 6 !in conjunto.Conteudo;
+
+    var qnt, s := conjunto.addArray(arr);
+    
+    assert arr[1] == 5;
+    assert arr[1] in conjunto.Conteudo;
+    assert arr[0] == 0;
+    assert arr[0] in conjunto.Conteudo;
+    assert 0 in conjunto.Conteudo;
+    assert 5 in conjunto.Conteudo;
+    assert 6 !in conjunto.Conteudo;
+    assert 2 in conjunto.Conteudo;
+
+    assert forall i: nat :: 0 <= i < arr.Length ==> arr[i] in conjunto.Conteudo;
+
+    // var remove := conjunto.remove(5);
+    // Por algum motivo, o assert abaixo nao funciona
+    // nao entendi o porque, ja que depois ele funciona
+    // assert 10 in conjunto.Conteudo;
+    assert arr[2] == 10;
+    assert arr[2] in conjunto.Conteudo;
+    assert 10 in conjunto.Conteudo;
+    
+
 }
